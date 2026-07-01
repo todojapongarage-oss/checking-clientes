@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0A0A0B"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>TallerOS</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Saira:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bk:#0A0A0B;--panel:#121214;--panel2:#161618;--line:#26262A;--lines:#1C1C1F;
+  --red:#E2231A;--redd:#B0140C;--redg:rgba(226,35,26,.15);
+  --white:#F5F6F7;--text:#E8E9EB;--mut:#8A8F98;--mut2:#5C616B;
+  --green:#22C55E;--amber:#F59E0B;--blue:#3B82F6;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bk);}
+body{font-family:'Saira',sans-serif;color:var(--text);}
+h1,h2,h3,h4{font-family:'Saira Condensed',sans-serif;}
+button,input,select,textarea{font-family:'Saira',sans-serif;}
+button{cursor:pointer;}
+
+/* APP SHELL */
+.app{display:flex;height:100dvh;overflow:hidden;}
+.sidebar{width:220px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;transition:transform .25s;}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.page{display:none;min-height:100%;}
+.page.on{display:block;}
+
+/* SIDEBAR */
+.sb-logo{padding:18px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+.sb-icon{width:36px;height:36px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(226,35,26,.4);}
+.sb-icon svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;}
+.sb-brand{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:var(--white);letter-spacing:.04em;}
+.sb-sub{font-size:.58rem;color:var(--mut);letter-spacing:.3em;text-transform:uppercase;display:block;}
+.sb-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;background:none;border:none;
+  color:var(--mut);font-size:.88rem;font-weight:500;width:100%;text-align:left;transition:background .15s,color .15s;}
+.nav-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0;}
+.nav-btn:hover{background:var(--panel2);color:var(--white);}
+.nav-btn.on{background:var(--redg);color:var(--white);border-left:3px solid var(--red);}
+.sb-foot{padding:12px 8px;border-top:1px solid var(--line);}
+.sb-kpi{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;
+  background:var(--panel2);border-radius:6px;margin-bottom:5px;}
+.kpi-n{font-family:'Saira Condensed',sans-serif;font-size:1.3rem;font-weight:800;color:var(--red);}
+.kpi-l{font-size:.68rem;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;}
+
+/* TOPBAR MOBILE */
+.topbar{display:none;height:54px;background:rgba(10,10,11,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:0 14px;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:60;padding-top:env(safe-area-inset-top,0);}
+.tb-logo{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:var(--white);display:flex;align-items:center;gap:8px;}
+.tb-dot{width:28px;height:28px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;}
+.tb-dot svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;}
+.ham{background:none;border:none;color:var(--white);padding:8px;border-radius:5px;}
+.ham svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;display:block;}
+
+/* OVERLAY DRAWER */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:80;backdrop-filter:blur(2px);}
+.overlay.on{display:block;}
+
+/* BOTONES */
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:'Saira Condensed',sans-serif;
+  font-weight:700;font-size:.88rem;letter-spacing:.06em;text-transform:uppercase;
+  padding:.62rem 1.1rem;border:none;border-radius:5px;transition:all .15s;white-space:nowrap;}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(226,35,26,.3);}
+.btn-red:hover{background:var(--redd);}
+.btn-ghost{background:transparent;color:var(--white);border:1px solid var(--line);}
+.btn-ghost:hover{border-color:var(--red);color:var(--red);}
+.btn-sm{padding:.4rem .85rem;font-size:.75rem;}
+.btn:disabled{opacity:.45;pointer-events:none;}
+
+/* PAGE HEADER */
+.phd{padding:22px 26px 14px;border-bottom:1px solid var(--line);}
+.phd h2{font-family:'Saira Condensed',sans-serif;font-size:1.45rem;font-weight:800;text-transform:uppercase;color:var(--white);margin-bottom:1px;}
+.phd p{font-size:.8rem;color:var(--mut);}
+.phd-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+
+/* BÚSQUEDA */
+.srow{padding:12px 26px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);}
+.swrap{position:relative;flex:1;min-width:160px;}
+.swrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;
+  stroke:var(--red);fill:none;stroke-width:2.2;pointer-events:none;}
+.sinput{width:100%;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--red);
+  color:var(--white);font-size:.87rem;padding:.6rem .85rem .6rem 2.3rem;border-radius:4px;outline:none;}
+.sinput:focus{box-shadow:0 0 0 3px rgba(226,35,26,.1);}
+.sinput::placeholder{color:var(--mut2);}
+.chips{display:flex;gap:5px;flex-wrap:wrap;}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--mut);font-family:'Saira Condensed',sans-serif;
+  font-weight:600;font-size:.73rem;letter-spacing:.06em;text-transform:uppercase;padding:.35rem .85rem;border-radius:3px;}
+.chip:hover{border-color:var(--red);color:var(--white);}
+.chip.on{background:var(--red);border-color:var(--red);color:#fff;}
+
+/* DASHBOARD */
+.dkpis{padding:18px 26px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.kpi-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--acc,var(--red)),transparent);}
+.kpi-big{font-family:'Saira Condensed',sans-serif;font-size:2rem;font-weight:800;color:var(--acc,var(--red));line-height:1;}
+.kpi-lab{font-size:.68rem;color:var(--mut);letter-spacing:.08em;text-transform:uppercase;margin-top:3px;}
+
+/* LISTA ÓRDENES */
+.olist{padding-bottom:60px;}
+.orow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  padding:13px 26px;border-bottom:1px solid var(--lines);}
+.orow:hover{background:var(--panel2);cursor:pointer;}
+.oplaca{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:.95rem;color:var(--white);
+  background:var(--panel2);border:1px solid var(--line);padding:3px 9px;border-radius:4px;letter-spacing:.06em;}
+.onombre{font-weight:600;font-size:.88rem;color:var(--white);}
+.odesc{font-size:.76rem;color:var(--mut);margin-top:1px;}
+.badge{display:inline-flex;align-items:center;font-family:'Saira Condensed',sans-serif;font-weight:700;
+  font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;white-space:nowrap;}
+.b-rec{background:rgba(59,130,246,.15);color:#93C5FD;}
+.b-proc{background:rgba(245,158,11,.15);color:#FCD34D;}
+.b-list{background:rgba(34,197,94,.15);color:#86EFAC;}
+.b-ent{background:rgba(139,92,246,.15);color:#C4B5FD;}
+
+/* DETALLE */
+.dhd{padding:18px 26px 14px;border-bottom:1px solid var(--line);}
+.dhd-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.dhd-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.dplaca{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:1.5rem;color:var(--white);letter-spacing:.06em;}
+.dmeta{font-size:.8rem;color:var(--mut);margin-top:2px;}
+.dbody{padding:18px 26px;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-bottom:60px;}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;position:relative;}
+.dcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);border-radius:8px 8px 0 0;}
+.dcard h4{font-family:'Saira Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:9px;}
+.full{grid-column:1/-1;}
+.irow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--lines);font-size:.83rem;}
+.irow:last-child{border-bottom:none;}
+.ilbl{color:var(--mut);}
+.ival{color:var(--white);font-weight:500;text-align:right;max-width:58%;}
+
+/* PROGRESO */
+.pbar-wrap{margin-top:10px;}
+.pbar-bg{background:var(--line);border-radius:2px;height:4px;}
+.pbar-fill{height:100%;border-radius:2px;background:var(--red);transition:width .4s;}
+.pbar-pct{font-size:.72rem;color:var(--mut);text-align:right;margin-top:3px;}
+
+/* CHECKLIST */
+.tlist{display:flex;flex-direction:column;gap:5px;}
+.titem{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:6px;}
+.titem.tdone .tname{text-decoration:line-through;opacity:.55;}
+.tcheck{width:20px;height:20px;flex-shrink:0;border-radius:50%;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.tcheck svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:3;}
+.tcheck.cdone{background:var(--green);border-color:var(--green);}
+.tcheck.cproc{background:var(--amber);border-color:var(--amber);}
+.tname{flex:1;font-size:.86rem;color:var(--white);}
+.tctrls{display:flex;gap:4px;}
+.tbtn{background:none;border:1px solid var(--line);color:var(--mut);padding:2px 8px;border-radius:3px;
+  font-family:'Saira Condensed',sans-serif;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
+.tbtn:hover{border-color:var(--red);color:var(--red);}
+
+/* CONFIRMAR BORRAR */
+.confirm-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:var(--panel);border-top:2px solid var(--red);padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  box-shadow:0 -8px 24px rgba(0,0,0,.5);}
+.confirm-msg{font-size:.9rem;color:var(--white);}
+.confirm-msg span{color:var(--red);font-weight:700;}
+.confirm-btns{display:flex;gap:8px;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--line);border-radius:8px;padding:22px;text-align:center;transition:all .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--red);background:var(--redg);}
+.upload-zone svg{width:30px;height:30px;stroke:var(--mut);fill:none;stroke-width:1.5;margin-bottom:7px;}
+.upload-zone p{font-size:.82rem;color:var(--mut);}
+.upload-zone span{color:var(--red);font-weight:600;}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:7px;margin-top:10px;}
+.pthumb{aspect-ratio:1;border-radius:6px;overflow:hidden;background:var(--panel2);border:1px solid var(--line);position:relative;}
+.pthumb img{width:100%;height:100%;object-fit:cover;}
+.pdel{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.75);border:none;border-radius:3px;
+  padding:3px;color:#fff;display:flex;cursor:pointer;}
+.pdel svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;}
+
+/* FORMS */
+.fld{margin-bottom:13px;}
+.fld label{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mut);margin-bottom:4px;font-family:'Saira Condensed',sans-serif;}
+.fld label.req::after{content:' *';color:var(--red);}
+.fld input,.fld select,.fld textarea{width:100%;background:rgba(10,10,11,.7);border:1px solid var(--line);
+  color:var(--white);padding:.65rem .85rem;border-radius:4px;font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(226,35,26,.1);}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--mut2);}
+.fld select option{background:#161618;}
+.fld textarea{resize:vertical;min-height:68px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:2px;}
+.tipo-opt{padding:.62rem .4rem;border:1.5px solid var(--line);border-radius:5px;background:var(--panel2);
+  color:var(--mut);text-align:center;font-family:'Saira Condensed',sans-serif;font-weight:700;
+  font-size:.77rem;letter-spacing:.04em;text-transform:uppercase;transition:all .15s;}
+.tipo-opt:hover{border-color:var(--red);color:var(--white);}
+.tipo-opt.on{border-color:var(--red);background:var(--redg);color:var(--white);}
+
+/* MODAL */
+.mback{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:16px;}
+.mback.on{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  width:100%;max-width:520px;max-height:90dvh;overflow-y:auto;display:flex;flex-direction:column;}
+.mhd{padding:18px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;background:var(--panel);z-index:1;}
+.mhd h3{font-family:'Saira Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;color:var(--white);}
+.mclose{background:none;border:none;color:var(--mut);padding:5px;border-radius:4px;}
+.mclose:hover{color:var(--white);}
+.mclose svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;display:block;}
+.mbody{padding:18px 20px;}
+.mfoot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;
+  position:sticky;bottom:0;background:var(--panel);}
+
+/* SERVICIO LINE */
+.svc-row{display:grid;grid-template-columns:1fr 52px 90px 30px;gap:6px;margin-bottom:7px;align-items:center;}
+.svc-input{background:var(--panel2);border:1px solid var(--line);color:var(--white);padding:.54rem .7rem;
+  border-radius:4px;font-size:.84rem;outline:none;width:100%;}
+.svc-input:focus{border-color:var(--red);}
+.svc-input::placeholder{color:var(--mut2);}
+.svc-del{background:none;border:none;color:var(--mut);font-size:1rem;padding:4px;display:flex;align-items:center;justify-content:center;}
+.svc-del:hover{color:var(--red);}
+
+/* PREFACTURA */
+.ftot{border-top:2px solid var(--line);margin-top:10px;padding-top:10px;}
+.frow-t{display:flex;justify-content:space-between;font-size:.83rem;padding:2px 0;color:var(--mut);}
+.frow-t.grand{font-family:'Saira Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:var(--white);}
+.frow-t.grand span:last-child{color:var(--red);}
+.fline{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:5px 0;border-bottom:1px solid var(--lines);font-size:.82rem;}
+.fline:last-child{border-bottom:none;}
+.famt{text-align:right;font-weight:600;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:18px;background:var(--panel);border:1px solid var(--line);
+  border-left:4px solid var(--green);border-radius:8px;padding:11px 15px;font-size:.86rem;color:var(--white);
+  box-shadow:0 8px 22px rgba(0,0,0,.5);z-index:500;transform:translateX(130%);transition:transform .3s;max-width:280px;}
+.toast.show{transform:translateX(0);}
+.toast.err{border-left-color:var(--red);}
+
+/* EMPTY */
+.empty{padding:50px 20px;text-align:center;color:var(--mut);}
+.empty svg{width:38px;height:38px;stroke:var(--line);fill:none;stroke-width:1.5;display:block;margin:0 auto 10px;}
+.empty p{font-family:'Saira Condensed',sans-serif;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase;}
+
+/* SECTION LABEL */
+.slbl{padding:14px 26px 6px;font-family:'Saira Condensed',sans-serif;font-size:.78rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--mut);}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .topbar{display:flex;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:90;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .phd{padding:14px 16px 10px;}
+  .srow{padding:10px 16px;}
+  .orow{padding:11px 16px;}
+  .dhd{padding:14px 16px 12px;}
+  .dbody{grid-template-columns:1fr;padding:14px 16px 60px;}
+  .dkpis{padding:14px 16px;grid-template-columns:repeat(2,1fr);}
+  .slbl{padding:12px 16px 4px;}
+  .olist .orow{grid-template-columns:auto 1fr auto;}
+  .frow{grid-template-columns:1fr;}
+  .tipo-grid{grid-template-columns:1fr;}
+  .mback{padding:0;align-items:flex-end;}
+  .modal{border-radius:14px 14px 0 0;max-height:93dvh;}
+}
+@media(prefers-reduced-motion:reduce){*{transition-duration:0ms!important;}}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR MOBILE -->
+<div class="topbar" id="topbar">
+  <div class="tb-logo">
+    <div class="tb-dot"><svg viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3m-1 9H9a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z"/></svg></div>
+    TallerOS
+  </div>
+  <button class="ham" id="hamBtn" aria-label="Menú">
+    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-icon"><svg viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3m-1 9H9a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z"/></svg></div>
+      <div><div class="sb-brand">TallerOS</div><span class="sb-sub">Gestión de taller</span></div>
+    </div>
+    <nav class="sb-nav">
+      <button class="nav-btn on" id="nb-dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" id="nb-ordenes">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Órdenes
+      </button>
+      <button class="nav-btn" id="nb-checkin">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nuevo ingreso
+      </button>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-kpi"><span class="kpi-l">En proceso</span><span class="kpi-n" id="kpi-proc">0</span></div>
+      <div class="sb-kpi"><span class="kpi-l">Listos</span><span class="kpi-n" id="kpi-list">0</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- DASHBOARD -->
+    <div class="page on" id="pg-dashboard">
+      <div class="phd">
+        <div class="phd-row">
+          <div><h2>Dashboard</h2><p id="hoy-fecha"></p></div>
+          <button class="btn btn-red" id="btn-nuevo-dash">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo ingreso
+          </button>
+        </div>
+      </div>
+      <div class="dkpis" id="dash-kpis"></div>
+      <div class="slbl">Actividad reciente</div>
+      <div class="olist" id="dash-list"></div>
+    </div>
+
+    <!-- ÓRDENES -->
+    <div class="page" id="pg-ordenes">
+      <div class="phd">
+        <div class="phd-row">
+          <div><h2>Órdenes</h2><p>Todos los vehículos en servicio</p></div>
+          <button class="btn btn-red btn-sm" id="btn-nuevo-ord">+ Nuevo</button>
+        </div>
+      </div>
+      <div class="srow">
+        <div class="swrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="sinput" id="ord-search" placeholder="Buscar placa, cliente, modelo…"/>
+        </div>
+        <div class="chips" id="ord-chips">
+          <button class="chip on" data-est="">Todas</button>
+          <button class="chip" data-est="RECIBIDO">Recibido</button>
+          <button class="chip" data-est="EN_PROCESO">En proceso</button>
+          <button class="chip" data-est="LISTO">Listo</button>
+          <button class="chip" data-est="ENTREGADO">Entregado</button>
+        </div>
+      </div>
+      <div class="olist" id="ord-list"></div>
+    </div>
+
+    <!-- CHECK-IN -->
+    <div class="page" id="pg-checkin">
+      <div class="phd"><h2>Nuevo ingreso</h2><p>Registra el vehículo y crea la orden de trabajo</p></div>
+      <div style="padding:18px 26px 80px;max-width:580px;">
+        <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);">
+          <h3 style="font-family:'Saira Condensed';font-size:.9rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:13px;">Datos del cliente</h3>
+          <div class="frow">
+            <div class="fld"><label class="req">Nombre del cliente</label><input type="text" id="f-nombre" placeholder="Nombre completo" autocomplete="name"/></div>
+            <div class="fld"><label class="req">Celular</label><input type="tel" id="f-cel" placeholder="300 000 0000" autocomplete="tel" maxlength="15"/></div>
+          </div>
+          <div class="fld"><label>Email (opcional)</label><input type="email" id="f-email" placeholder="correo@ejemplo.com" autocomplete="email"/></div>
+        </div>
+        <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);">
+          <h3 style="font-family:'Saira Condensed';font-size:.9rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:13px;">Datos del vehículo</h3>
+          <div class="frow">
+            <div class="fld"><label class="req">Placa</label><input type="text" id="f-placa" placeholder="ABC123" maxlength="7" style="text-transform:uppercase"/></div>
+            <div class="fld"><label>Color</label><input type="text" id="f-color" placeholder="Blanco"/></div>
+          </div>
+          <div class="fld"><label class="req">Marca y modelo</label><input type="text" id="f-modelo" placeholder="Toyota Corolla 2019"/></div>
+        </div>
+        <div style="margin-bottom:22px;">
+          <h3 style="font-family:'Saira Condensed';font-size:.9rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:13px;">Tipo de servicio <span style="color:var(--red)">*</span></h3>
+          <div class="tipo-grid" id="tipo-grid">
+            <button class="tipo-opt" data-tipo="LATONERIA_PINTURA">Latonería<br/>y Pintura</button>
+            <button class="tipo-opt" data-tipo="MECANICA_GENERAL">Mecánica<br/>General</button>
+            <button class="tipo-opt" data-tipo="AMBOS">Ambos</button>
+          </div>
+          <div class="fld" style="margin-top:13px;"><label>Descripción del cliente</label><textarea id="f-desc" placeholder="¿Qué reporta el cliente?" rows="3"></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" id="btn-cancelar-ci">Cancelar</button>
+          <button class="btn btn-red" id="btn-crear" style="flex:1">Crear orden de trabajo →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETALLE -->
+    <div class="page" id="pg-detalle">
+      <div id="detalle-root"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL CHECKOUT -->
+<div class="mback" id="modal-co">
+  <div class="modal">
+    <div class="mhd">
+      <h3>Checkout — Cerrar orden</h3>
+      <button class="mclose" id="btn-close-co"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mbody">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+        <label style="font-family:'Saira Condensed';font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);">Servicios realizados</label>
+        <button class="btn btn-ghost btn-sm" id="btn-add-svc">+ Agregar línea</button>
+      </div>
+      <div id="svc-lines"></div>
+      <div class="fld" style="margin-top:12px;"><label>Notas de factura</label><textarea id="co-notas" rows="2" placeholder="Observaciones, garantías…"></textarea></div>
+      <div id="co-preview" style="margin-top:14px;"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" id="btn-cancel-co">Cancelar</button>
+      <button class="btn btn-red" id="btn-do-checkout">Entregar vehículo ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA ESTADO SYNC -->
+<div id="sync-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 18px;align-items:center;gap:10px;font-size:.82rem;color:var(--text);">
+  <div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+  <span id="sync-msg"></span>
+</div>
+
+<!-- BARRA CONFIRMACIÓN BORRADO -->
+<div class="confirm-bar" id="confirm-bar" style="display:none">
+  <div class="confirm-msg">¿Borrar la orden <span id="confirm-label"></span>? Esta acción no se puede deshacer.</div>
+  <div class="confirm-btns">
+    <button class="btn btn-ghost btn-sm" id="btn-cancel-del">Cancelar</button>
+    <button class="btn btn-sm" style="background:var(--red);color:#fff" id="btn-confirm-del">Sí, borrar</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" multiple accept="image/*" style="display:none"/>
+
+<script>
+// ══════════════════════════════════════════════
+// DATOS Y CONSTANTES
+// ══════════════════════════════════════════════
+var CL = {
+  LATONERIA_PINTURA: ["Fotografía de daños iniciales","Desmontaje de piezas afectadas","Reparación y enderezada","Masilla y lijado","Imprimación (primer)","Aplicación de pintura base","Barniz y acabado","Montaje y ensamble","Control de calidad final"],
+  MECANICA_GENERAL:  ["Diagnóstico inicial","Revisión de fluidos","Inspección de frenos","Revisión suspensión y dirección","Cambio de aceite y filtro","Revisión sistema eléctrico","Prueba de ruta","Reporte al cliente"],
+  AMBOS:             ["Diagnóstico inicial","Fotografía de daños iniciales","Desmontaje de piezas","Reparación estructura","Revisión fluidos y frenos","Revisión sistema eléctrico","Masilla, imprimación y pintura","Barniz y acabado","Montaje de piezas","Prueba de ruta","Control de calidad final"]
+};
+var ELBL = {RECIBIDO:"Recibido",EN_PROCESO:"En proceso",LISTO:"Listo",ENTREGADO:"Entregado",CANCELADO:"Cancelado"};
+var ECLS  = {RECIBIDO:"b-rec",EN_PROCESO:"b-proc",LISTO:"b-list",ENTREGADO:"b-ent"};
+var TLBL  = {LATONERIA_PINTURA:"Latonería",MECANICA_GENERAL:"Mecánica",AMBOS:"Ambos"};
+
+// ══════════════════════════════════════════════
+// FIREBASE CONFIG — pega aquí tu configuración
+// ══════════════════════════════════════════════
+var FIREBASE_CONFIG = {
+  apiKey:            "PEGA_TU_apiKey_AQUI",
+  authDomain:        "PEGA_TU_authDomain_AQUI",
+  projectId:         "PEGA_TU_projectId_AQUI",
+  storageBucket:     "PEGA_TU_storageBucket_AQUI",
+  messagingSenderId: "PEGA_TU_messagingSenderId_AQUI",
+  appId:             "PEGA_TU_appId_AQUI"
+};
+// ══════════════════════════════════════════════
+
+var ordenes   = [];
+var nextNum   = 1;
+var fotos     = {};
+var tipoSel   = "";
+var filtroEst = "";
+var filtroQ   = "";
+var coId      = null;
+var detId     = null;
+var db        = null;
+var useCloud  = false;
+
+// Guarda en Firestore SI está configurado, si no usa localStorage como respaldo
+function save() {
+  if (useCloud && db) {
+    saveToFirestore();
+  } else {
+    localStorage.setItem("to_ord", JSON.stringify(ordenes));
+    localStorage.setItem("to_num", String(nextNum));
+  }
+}
+
+function saveToFirestore() {
+  var batch = {
+    ordenes: ordenes,
+    nextNum: nextNum,
+    updatedAt: new Date().toISOString()
+  };
+  db.collection("taller").doc("datos").set(batch).catch(function(e) {
+    console.error("Error guardando en Firestore:", e);
+    toast("Error al guardar en la nube. Guardando local.", true);
+    localStorage.setItem("to_ord", JSON.stringify(ordenes));
+    localStorage.setItem("to_num", String(nextNum));
+  });
+}
+
+// ══════════════════════════════════════════════
+// UTILIDADES
+// ══════════════════════════════════════════════
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fmt(n) { return "$" + (n||0).toLocaleString("es-CO",{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function ts(iso) { return new Date(iso).toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
+function prog(o) {
+  if (!o.tareas || !o.tareas.length) return 0;
+  var done = o.tareas.filter(function(t){ return t.est==="FINALIZADO"||t.est==="OMITIDO"; }).length;
+  return Math.round(done / o.tareas.length * 100);
+}
+function badgeHtml(est) {
+  return '<span class="badge ' + (ECLS[est]||"") + '">' + (ELBL[est]||est) + '</span>';
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, err) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast" + (err ? " err" : "");
+  t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.classList.remove("show"); }, 3000);
+}
+
+// ══════════════════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("on"); });
+  var pg = document.getElementById("pg-" + id);
+  if (pg) pg.classList.add("on");
+  document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.remove("on"); });
+  var nb = document.getElementById("nb-" + id);
+  if (nb) nb.classList.add("on");
+  closeSidebar();
+  if (id === "dashboard") renderDash();
+  if (id === "ordenes")   renderOrdenes();
+  document.getElementById("main").scrollTo(0, 0);
+}
+function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("overlay").classList.add("on"); }
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("on"); }
+function openModal(id)  { document.getElementById(id).classList.add("on"); }
+function closeModal(id) { document.getElementById(id).classList.remove("on"); }
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDash() {
+  var hoy = new Date().toLocaleDateString("es-CO",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  document.getElementById("hoy-fecha").textContent = hoy;
+  var total = ordenes.length;
+  var rec   = ordenes.filter(function(o){ return o.est==="RECIBIDO"; }).length;
+  var proc  = ordenes.filter(function(o){ return o.est==="EN_PROCESO"; }).length;
+  var lst   = ordenes.filter(function(o){ return o.est==="LISTO"; }).length;
+  var ent   = ordenes.filter(function(o){ return o.est==="ENTREGADO"; }).length;
+  document.getElementById("kpi-proc").textContent = proc;
+  document.getElementById("kpi-list").textContent = lst;
+  document.getElementById("dash-kpis").innerHTML =
+    kpiCard(total,"Total órdenes","var(--blue)") +
+    kpiCard(rec,"Recibidos","var(--mut)") +
+    kpiCard(proc,"En proceso","var(--amber)") +
+    kpiCard(lst,"Listos","var(--green)") +
+    kpiCard(ent,"Entregados","var(--blue)");
+  var rec5 = ordenes.slice().reverse().slice(0,5);
+  var el = document.getElementById("dash-list");
+  if (!rec5.length) { el.innerHTML = emptyHTML("Sin órdenes todavía"); return; }
+  el.innerHTML = rec5.map(function(o){ return orowHTML(o); }).join("");
+  bindOrows(el);
+}
+function kpiCard(n, lbl, acc) {
+  return '<div class="kpi-card" style="--acc:' + acc + '"><div class="kpi-big">' + n + '</div><div class="kpi-lab">' + lbl + '</div></div>';
+}
+
+// ══════════════════════════════════════════════
+// ÓRDENES LIST
+// ══════════════════════════════════════════════
+function renderOrdenes() {
+  var q = filtroQ.toLowerCase();
+  var lista = ordenes.slice().reverse().filter(function(o) {
+    var matchQ = !q || (o.placa + o.cliente + o.modelo).toLowerCase().indexOf(q) >= 0;
+    var matchE = !filtroEst || o.est === filtroEst;
+    return matchQ && matchE;
+  });
+  var el = document.getElementById("ord-list");
+  if (!lista.length) { el.innerHTML = emptyHTML("Sin resultados"); return; }
+  el.innerHTML = lista.map(function(o){ return orowHTML(o); }).join("");
+  bindOrows(el);
+}
+function orowHTML(o) {
+  return '<div class="orow" data-id="' + esc(o.id) + '">' +
+    '<div class="oplaca">' + esc(o.placa) + '</div>' +
+    '<div><div class="onombre">' + esc(o.cliente) + '</div><div class="odesc">' + esc(o.modelo) + ' · ' + (TLBL[o.tipo]||o.tipo) + '</div></div>' +
+    '<div style="display:flex;align-items:center;gap:7px">' + badgeHtml(o.est) +
+    '<button class="tbtn del-btn" data-id="' + esc(o.id) + '" title="Borrar orden" style="color:var(--mut2);border-color:transparent;padding:3px 7px;font-size:.85rem">🗑</button>' +
+    '</div>' +
+    '</div>';
+}
+function bindOrows(container) {
+  container.querySelectorAll(".orow").forEach(function(row) {
+    row.addEventListener("click", function() { verDetalle(row.dataset.id); });
+  });
+  container.querySelectorAll(".del-btn").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      pedirConfirmacion(btn.dataset.id);
+    });
+  });
+}
+function emptyHTML(txt) {
+  return '<div class="empty"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>' + txt + '</p></div>';
+}
+
+// ══════════════════════════════════════════════
+// CHECK-IN
+// ══════════════════════════════════════════════
+function crearOrden() {
+  var nombre = document.getElementById("f-nombre").value.trim();
+  var cel    = document.getElementById("f-cel").value.replace(/\s/g,"");
+  var placa  = document.getElementById("f-placa").value.trim().toUpperCase();
+  var modelo = document.getElementById("f-modelo").value.trim();
+  var color  = document.getElementById("f-color").value.trim();
+  var desc   = document.getElementById("f-desc").value.trim();
+  if (!nombre) { toast("Ingresa el nombre del cliente.", true); document.getElementById("f-nombre").focus(); return; }
+  if (!cel || cel.length < 10) { toast("El celular debe tener al menos 10 dígitos.", true); document.getElementById("f-cel").focus(); return; }
+  if (!placa || placa.length < 5) { toast("Ingresa una placa válida (ej: ABC123).", true); document.getElementById("f-placa").focus(); return; }
+  if (!modelo) { toast("Ingresa el modelo del vehículo.", true); document.getElementById("f-modelo").focus(); return; }
+  if (!tipoSel) { toast("Selecciona el tipo de servicio.", true); return; }
+  var tareas = CL[tipoSel].map(function(n, i) {
+    return { id: "t" + Date.now() + "_" + i, nombre: n, est: "PENDIENTE", orden: i+1, ini: null, fin: null };
+  });
+  var o = {
+    id: "o" + Date.now(), num: nextNum++, placa: placa, modelo: modelo, color: color,
+    cliente: nombre, cel: cel, tipo: tipoSel, desc: desc,
+    est: "RECIBIDO", tareas: tareas, servicios: [], total: null, iva: null,
+    fechaIng: new Date().toISOString(), fechaEnt: null
+  };
+  ordenes.push(o);
+  save();
+  toast("Orden OT-" + String(o.num).padStart(4,"0") + " creada ✓");
+  document.getElementById("f-nombre").value = "";
+  document.getElementById("f-cel").value = "";
+  document.getElementById("f-email").value = "";
+  document.getElementById("f-placa").value = "";
+  document.getElementById("f-modelo").value = "";
+  document.getElementById("f-color").value = "";
+  document.getElementById("f-desc").value = "";
+  tipoSel = "";
+  document.querySelectorAll(".tipo-opt").forEach(function(b){ b.classList.remove("on"); });
+  setTimeout(function(){ verDetalle(o.id); }, 350);
+}
+
+// ══════════════════════════════════════════════
+// DETALLE
+// ══════════════════════════════════════════════
+function verDetalle(id) {
+  detId = id;
+  var o = ordenes.find(function(x){ return x.id === id; });
+  if (!o) return;
+  if (!fotos[id]) fotos[id] = [];
+  showPage("detalle");
+  renderDetalle(o);
+}
+
+function renderDetalle(o) {
+  var p = prog(o);
+  var listo = o.est === "LISTO";
+  var entregado = o.est === "ENTREGADO";
+  var root = document.getElementById("detalle-root");
+
+  // HEADER
+  var hdHTML = '<div class="dhd">' +
+    '<div class="dhd-row">' +
+    '<div><div class="dplaca">' + esc(o.placa) + '</div>' +
+    '<div class="dmeta">' + esc(o.modelo) + (o.color ? ' · ' + esc(o.color) : '') + ' · Ingreso: ' + ts(o.fechaIng) + '</div></div>' +
+    '<div class="dhd-actions">' + badgeHtml(o.est);
+  if (!entregado && o.est !== "CANCELADO") {
+    hdHTML += '<button class="btn btn-red btn-sm" id="btn-checkout-det" ' + (listo ? '' : 'disabled') + '>' + (listo ? 'Checkout ✓' : 'Pendiente tareas') + '</button>';
+  }
+  hdHTML += '<button class="btn btn-ghost btn-sm" id="btn-volver-det">← Volver</button>' +
+    '<button class="btn btn-sm" id="btn-del-det" style="border:1px solid var(--line);background:transparent;color:var(--mut2)">🗑 Borrar</button>' +
+    '</div></div>' +
+    '<div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" style="width:' + p + '%;background:' + (p===100?'var(--green)':'var(--red)') + '"></div></div>' +
+    '<div class="pbar-pct">' + p + '% completado</div></div></div>';
+
+  // INFO CARDS
+  var bodyHTML = '<div class="dbody">' +
+    '<div class="dcard">' +
+    '<h4>Cliente</h4>' +
+    infoRow("Nombre", o.cliente) + infoRow("Celular", o.cel) + infoRow("Servicio", TLBL[o.tipo]||o.tipo) +
+    (o.desc ? infoRow("Descripción", o.desc) : '') +
+    '</div>' +
+    '<div class="dcard">' +
+    '<h4>Orden</h4>' +
+    infoRow("N° Orden", "OT-" + String(o.num).padStart(4,"0")) +
+    infoRow("Estado", badgeHtml(o.est)) +
+    infoRow("Ingreso", ts(o.fechaIng)) +
+    infoRow("Entrega", o.fechaEnt ? ts(o.fechaEnt) : "—") +
+    (o.total !== null ? infoRow("Total", '<span style="color:var(--green);font-family:\'Saira Condensed\';font-size:1.1rem;font-weight:800">' + fmt(o.total) + '</span>') : '') +
+    '</div>' +
+    // CHECKLIST
+    '<div class="dcard full"><h4>Checklist de tareas</h4><div class="tlist" id="tlist-' + o.id + '">' + renderTareasHTML(o) + '</div></div>' +
+    // FOTOS
+    '<div class="dcard full">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">' +
+    '<h4 style="margin:0">Fotos del vehículo</h4>' +
+    (!entregado ? '<button class="btn btn-ghost btn-sm" id="btn-add-foto">+ Añadir foto</button>' : '') +
+    '</div>' +
+    '<div class="pgrid" id="pgrid-' + o.id + '">' + renderFotosHTML(o.id) + '</div>' +
+    ((!fotos[o.id] || !fotos[o.id].length) ? uploadZoneHTML() : '') +
+    '</div>';
+
+  // FACTURA si entregado
+  if (entregado && o.servicios && o.servicios.length) {
+    bodyHTML += '<div class="dcard full"><h4>Resumen de factura</h4>' + facturaHTML(o) + '</div>';
+  }
+  bodyHTML += '</div>';
+
+  root.innerHTML = hdHTML + bodyHTML;
+
+  // EVENTOS DEL DETALLE
+  var btnV = document.getElementById("btn-volver-det");
+  if (btnV) btnV.addEventListener("click", function(){ showPage("ordenes"); });
+
+  var btnDel = document.getElementById("btn-del-det");
+  if (btnDel) btnDel.addEventListener("click", function(){ pedirConfirmacion(o.id); });
+
+  var btnCO = document.getElementById("btn-checkout-det");
+  if (btnCO) btnCO.addEventListener("click", function(){ abrirCheckout(o.id); });
+
+  var btnFoto = document.getElementById("btn-add-foto");
+  if (btnFoto) btnFoto.addEventListener("click", function(){ document.getElementById("file-input").click(); });
+
+  var uz = root.querySelector(".upload-zone");
+  if (uz) {
+    uz.addEventListener("click", function(){ document.getElementById("file-input").click(); });
+    uz.addEventListener("dragover", function(e){ e.preventDefault(); uz.classList.add("drag"); });
+    uz.addEventListener("dragleave", function(){ uz.classList.remove("drag"); });
+    uz.addEventListener("drop", function(e){ e.preventDefault(); uz.classList.remove("drag"); handleFiles(e.dataTransfer.files, o.id); });
+  }
+
+  // BOTONES TAREA
+  root.querySelectorAll(".tbtn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      setTarea(btn.dataset.oid, btn.dataset.tid, btn.dataset.est);
+    });
+  });
+  root.querySelectorAll(".tcheck").forEach(function(tc) {
+    tc.addEventListener("click", function() {
+      cicloTarea(tc.dataset.oid, tc.dataset.tid);
+    });
+  });
+
+  // BORRAR FOTO
+  root.querySelectorAll(".pdel").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      deleteFoto(btn.dataset.oid, parseInt(btn.dataset.idx));
+    });
+  });
+}
+
+function infoRow(lbl, val) {
+  return '<div class="irow"><span class="ilbl">' + lbl + '</span><span class="ival">' + val + '</span></div>';
+}
+
+function renderTareasHTML(o) {
+  return o.tareas.map(function(t) {
+    var ck = t.est === "FINALIZADO" ? "cdone" : t.est === "EN_PROCESO" ? "cproc" : "";
+    var chkIcon = t.est === "FINALIZADO"
+      ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+      : t.est === "EN_PROCESO"
+      ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="white" stroke="none"/></svg>'
+      : "";
+    var ctrls = "";
+    if (o.est !== "ENTREGADO" && o.est !== "CANCELADO") {
+      if (t.est === "PENDIENTE")   ctrls += '<button class="tbtn" data-oid="' + o.id + '" data-tid="' + t.id + '" data-est="EN_PROCESO">Iniciar</button>';
+      if (t.est === "EN_PROCESO")  ctrls += '<button class="tbtn" data-oid="' + o.id + '" data-tid="' + t.id + '" data-est="FINALIZADO">Finalizar</button>';
+      if (t.est === "FINALIZADO")  ctrls += '<button class="tbtn" data-oid="' + o.id + '" data-tid="' + t.id + '" data-est="PENDIENTE">Deshacer</button>';
+    }
+    return '<div class="titem ' + (t.est==="FINALIZADO"?"tdone":"") + '">' +
+      '<div class="tcheck ' + ck + '" data-oid="' + o.id + '" data-tid="' + t.id + '">' + chkIcon + '</div>' +
+      '<span class="tname">' + esc(t.nombre) + '</span>' +
+      (ctrls ? '<div class="tctrls">' + ctrls + '</div>' : '') +
+      '</div>';
+  }).join("");
+}
+
+function uploadZoneHTML() {
+  return '<div class="upload-zone" style="margin-top:8px">' +
+    '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+    '<p>Arrastra fotos aquí o <span>selecciona archivos</span></p></div>';
+}
+
+// ══════════════════════════════════════════════
+// TAREAS
+// ══════════════════════════════════════════════
+function setTarea(oid, tid, nuevoEst) {
+  var o = ordenes.find(function(x){ return x.id===oid; });
+  if (!o) return;
+  var t = o.tareas.find(function(x){ return x.id===tid; });
+  if (!t) return;
+  t.est = nuevoEst;
+  if (nuevoEst === "EN_PROCESO" && !t.ini) t.ini = new Date().toISOString();
+  if (nuevoEst === "FINALIZADO") t.fin = new Date().toISOString();
+  var todasFin = o.tareas.every(function(x){ return x.est==="FINALIZADO"||x.est==="OMITIDO"; });
+  var hayProc  = o.tareas.some(function(x){ return x.est==="EN_PROCESO"; });
+  if (todasFin) o.est = "LISTO";
+  else if (hayProc) o.est = "EN_PROCESO";
+  else o.est = "RECIBIDO";
+  save();
+  renderDetalle(o);
+  updateKPIs();
+}
+
+function cicloTarea(oid, tid) {
+  var o = ordenes.find(function(x){ return x.id===oid; });
+  if (!o) return;
+  var t = o.tareas.find(function(x){ return x.id===tid; });
+  if (!t || o.est==="ENTREGADO") return;
+  var ciclo = {PENDIENTE:"EN_PROCESO",EN_PROCESO:"FINALIZADO",FINALIZADO:"PENDIENTE"};
+  setTarea(oid, tid, ciclo[t.est]||"PENDIENTE");
+}
+
+// ══════════════════════════════════════════════
+// FOTOS
+// ══════════════════════════════════════════════
+function renderFotosHTML(id) {
+  var f = fotos[id] || [];
+  return f.map(function(src, i) {
+    return '<div class="pthumb"><img src="' + src + '" loading="lazy"/>' +
+      '<button class="pdel" data-oid="' + id + '" data-idx="' + i + '">' +
+      '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>';
+  }).join("");
+}
+
+function handleFiles(files, oid) {
+  var id = oid || detId;
+  Array.from(files).forEach(function(f) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      if (!fotos[id]) fotos[id] = [];
+      fotos[id].push(e.target.result);
+      var pg = document.getElementById("pgrid-" + id);
+      if (pg) {
+        pg.innerHTML = renderFotosHTML(id);
+        pg.querySelectorAll(".pdel").forEach(function(btn) {
+          btn.addEventListener("click", function(ev) { ev.stopPropagation(); deleteFoto(btn.dataset.oid, parseInt(btn.dataset.idx)); });
+        });
+        var uz = pg.parentElement.querySelector(".upload-zone");
+        if (uz && fotos[id].length) uz.style.display = "none";
+      }
+    };
+    r.readAsDataURL(f);
+  });
+}
+
+function deleteFoto(id, idx) {
+  if (!fotos[id]) return;
+  fotos[id].splice(idx, 1);
+  var pg = document.getElementById("pgrid-" + id);
+  if (pg) {
+    pg.innerHTML = renderFotosHTML(id);
+    pg.querySelectorAll(".pdel").forEach(function(btn) {
+      btn.addEventListener("click", function(e) { e.stopPropagation(); deleteFoto(btn.dataset.oid, parseInt(btn.dataset.idx)); });
+    });
+  }
+}
+
+// ══════════════════════════════════════════════
+// CHECKOUT
+// ══════════════════════════════════════════════
+function abrirCheckout(id) {
+  var o = ordenes.find(function(x){ return x.id===id; });
+  if (!o) return;
+  var inc = o.tareas.filter(function(t){ return t.est!=="FINALIZADO"&&t.est!=="OMITIDO"; });
+  if (inc.length) { toast("Hay " + inc.length + " tarea(s) sin finalizar.", true); return; }
+  coId = id;
+  document.getElementById("svc-lines").innerHTML = "";
+  document.getElementById("co-notas").value = "";
+  document.getElementById("co-preview").innerHTML = "";
+  addSvcLine();
+  openModal("modal-co");
+}
+
+function addSvcLine() {
+  var row = document.createElement("div");
+  row.className = "svc-row";
+  row.innerHTML =
+    '<input type="text" class="svc-input svc-desc" placeholder="Descripción del servicio"/>' +
+    '<input type="number" class="svc-input svc-qty" value="1" min="1" style="text-align:center"/>' +
+    '<input type="number" class="svc-input svc-price" placeholder="$ Precio" min="0"/>' +
+    '<button class="svc-del">✕</button>';
+  row.querySelector(".svc-del").addEventListener("click", function() { row.remove(); calcPreview(); });
+  row.querySelectorAll("input").forEach(function(i){ i.addEventListener("input", calcPreview); });
+  document.getElementById("svc-lines").appendChild(row);
+}
+
+function calcPreview() {
+  var rows = document.querySelectorAll("#svc-lines .svc-row");
+  var sub = 0;
+  rows.forEach(function(r) {
+    var qty = parseFloat(r.querySelector(".svc-qty").value) || 1;
+    var p   = parseFloat(r.querySelector(".svc-price").value) || 0;
+    sub += qty * p;
+  });
+  var iva   = sub * 0.19;
+  var total = sub + iva;
+  var el = document.getElementById("co-preview");
+  if (sub > 0) {
+    el.innerHTML = '<div class="ftot">' +
+      '<div class="frow-t"><span>Subtotal</span><span>' + fmt(sub) + '</span></div>' +
+      '<div class="frow-t"><span>IVA 19%</span><span>' + fmt(iva) + '</span></div>' +
+      '<div class="frow-t grand"><span>Total</span><span>' + fmt(total) + '</span></div></div>';
+  } else {
+    el.innerHTML = "";
+  }
+}
+
+function doCheckout() {
+  var o = ordenes.find(function(x){ return x.id===coId; });
+  if (!o) return;
+  var rows = document.querySelectorAll("#svc-lines .svc-row");
+  var servicios = Array.from(rows).map(function(r) {
+    var qty = parseInt(r.querySelector(".svc-qty").value) || 1;
+    var p   = parseFloat(r.querySelector(".svc-price").value) || 0;
+    return { desc: r.querySelector(".svc-desc").value.trim() || "Servicio", qty: qty, precio: p, sub: qty*p };
+  });
+  var sub   = servicios.reduce(function(a,s){ return a + s.sub; }, 0);
+  var iva   = sub * 0.19;
+  o.servicios = servicios;
+  o.subtotal  = sub;
+  o.iva       = iva;
+  o.total     = sub + iva;
+  o.est       = "ENTREGADO";
+  o.fechaEnt  = new Date().toISOString();
+  o.notas     = document.getElementById("co-notas").value.trim();
+  save();
+  closeModal("modal-co");
+  toast("Vehículo entregado y orden cerrada ✓");
+  updateKPIs();
+  setTimeout(function(){ verDetalle(coId); }, 300);
+}
+
+function facturaHTML(o) {
+  var lines = (o.servicios||[]).map(function(s) {
+    return '<div class="fline"><span>' + esc(s.desc) + '</span><span>×' + s.qty + '</span><span class="famt">' + fmt(s.sub) + '</span></div>';
+  }).join("");
+  return lines +
+    '<div class="ftot">' +
+    '<div class="frow-t"><span>Subtotal</span><span>' + fmt(o.subtotal) + '</span></div>' +
+    '<div class="frow-t"><span>IVA 19%</span><span>' + fmt(o.iva) + '</span></div>' +
+    '<div class="frow-t grand"><span>Total</span><span>' + fmt(o.total) + '</span></div></div>' +
+    (o.notas ? '<p style="font-size:.78rem;color:var(--mut);margin-top:9px">' + esc(o.notas) + '</p>' : '');
+}
+
+function updateKPIs() {
+  document.getElementById("kpi-proc").textContent = ordenes.filter(function(o){ return o.est==="EN_PROCESO"; }).length;
+  document.getElementById("kpi-list").textContent = ordenes.filter(function(o){ return o.est==="LISTO"; }).length;
+}
+
+// ══════════════════════════════════════════════
+// DEMO DATA
+// ══════════════════════════════════════════════
+function seedDemo() {
+  if (ordenes.length) return;
+  var demos = [
+    {placa:"ABC123",modelo:"Toyota Corolla 2019",color:"Blanco",cliente:"Carlos Rodríguez",cel:"3001234567",tipo:"MECANICA_GENERAL",desc:"Cambio de aceite y revisión general"},
+    {placa:"XYZ789",modelo:"Mazda 3 2021",color:"Rojo",cliente:"María García",cel:"3109876543",tipo:"LATONERIA_PINTURA",desc:"Golpe en puerta delantera derecha"},
+    {placa:"MNO456",modelo:"Nissan Frontier 2018",color:"Gris",cliente:"Pedro López",cel:"3205551234",tipo:"AMBOS",desc:"Rayón en capó y filtros"},
+  ];
+  demos.forEach(function(d, i) {
+    var tareas = CL[d.tipo].map(function(n, j) {
+      return { id: "t"+i+"_"+j, nombre: n, est: "PENDIENTE", orden: j+1, ini: null, fin: null };
+    });
+    var o = { id:"o"+i, num:nextNum++, est:"RECIBIDO", tareas:tareas, servicios:[], total:null, iva:null,
+      placa:d.placa, modelo:d.modelo, color:d.color, cliente:d.cliente, cel:d.cel, tipo:d.tipo, desc:d.desc,
+      fechaIng:new Date(Date.now()-i*86400000).toISOString(), fechaEnt:null };
+    if (i === 0) {
+      tareas.slice(0,3).forEach(function(t){ t.est="FINALIZADO"; t.fin=new Date().toISOString(); });
+      o.est = "EN_PROCESO";
+    }
+    ordenes.push(o);
+  });
+  save();
+}
+
+// ══════════════════════════════════════════════
+// INIT — arranca Firebase o localStorage
+// ══════════════════════════════════════════════
+function iniciarApp() {
+  updateKPIs();
+  renderDash();
+}
+
+function cargarDesdeLocal() {
+  ordenes = JSON.parse(localStorage.getItem("to_ord") || "[]");
+  nextNum = parseInt(localStorage.getItem("to_num") || "1");
+  seedDemo();
+  iniciarApp();
+}
+
+function iniciarFirebase() {
+  var cfg = FIREBASE_CONFIG;
+  if (cfg.apiKey === "PEGA_TU_apiKey_AQUI") {
+    // Config no pegada todavía → usar localStorage
+    showBanner("modo-local");
+    cargarDesdeLocal();
+    return;
+  }
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+    }
+    db = firebase.firestore();
+    useCloud = true;
+
+    // Escucha cambios en tiempo real
+    db.collection("taller").doc("datos").onSnapshot(function(doc) {
+      if (doc.exists) {
+        var data = doc.data();
+        ordenes = data.ordenes || [];
+        nextNum = data.nextNum || 1;
+      } else {
+        // Primer uso: migrar datos locales si los hay
+        var locales = localStorage.getItem("to_ord");
+        if (locales) {
+          ordenes = JSON.parse(locales);
+          nextNum = parseInt(localStorage.getItem("to_num") || "1");
+          toast("Migrando datos locales a la nube...");
+          save();
+        } else {
+          seedDemo();
+          save();
+        }
+      }
+      updateKPIs();
+      renderDash();
+      // Actualizar vista actual si hay una abierta
+      var pgDet = document.getElementById("pg-detalle");
+      if (pgDet && pgDet.classList.contains("on") && detId) {
+        var o = ordenes.find(function(x){ return x.id === detId; });
+        if (o) renderDetalle(o);
+      }
+      if (document.getElementById("pg-ordenes").classList.contains("on")) {
+        renderOrdenes();
+      }
+    }, function(error) {
+      console.error("Error Firebase:", error);
+      showBanner("modo-local");
+      cargarDesdeLocal();
+    });
+
+    showBanner("modo-cloud");
+  } catch(e) {
+    console.error("Error iniciando Firebase:", e);
+    showBanner("modo-local");
+    cargarDesdeLocal();
+  }
+}
+
+function showBanner(modo) {
+  var bar = document.getElementById("sync-bar");
+  var msg = document.getElementById("sync-msg");
+  var dot = document.getElementById("sync-dot");
+  if (modo === "modo-cloud") {
+    dot.style.background = "#22C55E";
+    msg.textContent = "Sincronizado con la nube — cambios visibles en todos los dispositivos";
+  } else {
+    dot.style.background = "#F59E0B";
+    msg.textContent = "Modo local — configura Firebase para sincronizar entre dispositivos";
+  }
+  bar.style.display = "flex";
+  setTimeout(function(){ if (modo==="modo-cloud") bar.style.display = "none"; }, 4000);
+}
+
+iniciarFirebase();
+// ══════════════════════════════════════════════
+var pendingDelId = null;
+
+function pedirConfirmacion(id) {
+  var o = ordenes.find(function(x){ return x.id === id; });
+  if (!o) return;
+  pendingDelId = id;
+  document.getElementById("confirm-label").textContent = "OT-" + String(o.num).padStart(4,"0") + " (" + o.placa + " · " + o.cliente + ")";
+  document.getElementById("confirm-bar").style.display = "flex";
+}
+
+function cancelarBorrado() {
+  pendingDelId = null;
+  document.getElementById("confirm-bar").style.display = "none";
+}
+
+function confirmarBorrado() {
+  if (!pendingDelId) return;
+  var idx = ordenes.findIndex(function(x){ return x.id === pendingDelId; });
+  if (idx === -1) { cancelarBorrado(); return; }
+  var o = ordenes[idx];
+  var label = "OT-" + String(o.num).padStart(4,"0");
+  ordenes.splice(idx, 1);
+  if (fotos[pendingDelId]) delete fotos[pendingDelId];
+  save();
+  cancelarBorrado();
+  updateKPIs();
+  toast(label + " eliminada correctamente.");
+  // Si estábamos en el detalle de esa orden, volver a la lista
+  var pgDet = document.getElementById("pg-detalle");
+  if (pgDet && pgDet.classList.contains("on")) {
+    showPage("ordenes");
+  } else {
+    renderDash();
+    renderOrdenes();
+  }
+}
+
+// ══════════════════════════════════════════════
+// BIND EVENTOS ESTÁTICOS
+// ══════════════════════════════════════════════
+document.getElementById("btn-cancel-del").addEventListener("click", cancelarBorrado);
+document.getElementById("btn-confirm-del").addEventListener("click", confirmarBorrado);
+
+document.getElementById("nb-dashboard").addEventListener("click", function(){ showPage("dashboard"); });
+document.getElementById("nb-ordenes").addEventListener("click",   function(){ showPage("ordenes"); });
+document.getElementById("nb-checkin").addEventListener("click",   function(){ showPage("checkin"); });
+document.getElementById("btn-nuevo-dash").addEventListener("click", function(){ showPage("checkin"); });
+document.getElementById("btn-nuevo-ord").addEventListener("click",  function(){ showPage("checkin"); });
+document.getElementById("btn-cancelar-ci").addEventListener("click", function(){ showPage("ordenes"); });
+document.getElementById("btn-crear").addEventListener("click", crearOrden);
+document.getElementById("hamBtn").addEventListener("click", openSidebar);
+document.getElementById("overlay").addEventListener("click", closeSidebar);
+document.getElementById("btn-close-co").addEventListener("click",  function(){ closeModal("modal-co"); });
+document.getElementById("btn-cancel-co").addEventListener("click", function(){ closeModal("modal-co"); });
+document.getElementById("btn-do-checkout").addEventListener("click", doCheckout);
+document.getElementById("btn-add-svc").addEventListener("click", addSvcLine);
+
+// TIPO SERVICIO BUTTONS
+document.querySelectorAll(".tipo-opt").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    tipoSel = btn.dataset.tipo;
+    document.querySelectorAll(".tipo-opt").forEach(function(b){ b.classList.remove("on"); });
+    btn.classList.add("on");
+  });
+});
+
+// SEARCH & CHIPS
+document.getElementById("ord-search").addEventListener("input", function() {
+  filtroQ = this.value;
+  renderOrdenes();
+});
+document.querySelectorAll("#ord-chips .chip").forEach(function(chip) {
+  chip.addEventListener("click", function() {
+    filtroEst = chip.dataset.est;
+    document.querySelectorAll("#ord-chips .chip").forEach(function(c){ c.classList.remove("on"); });
+    chip.classList.add("on");
+    renderOrdenes();
+  });
+});
+
+// PLACA UPPERCASE
+document.getElementById("f-placa").addEventListener("input", function() {
+  this.value = this.value.toUpperCase();
+});
+
+// FILE INPUT
+document.getElementById("file-input").addEventListener("change", function() {
+  handleFiles(this.files, detId);
+  this.value = "";
+});
+</script>
+</body>
+</html>
